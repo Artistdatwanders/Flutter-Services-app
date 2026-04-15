@@ -36,25 +36,52 @@ class Job {
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
+    // Helper function: Extracts the string ID regardless of whether 
+    // Mongoose sent a plain string or a populated JSON object.
+    String getObjectId(dynamic field) {
+      if (field is Map<String, dynamic>) {
+        return field['_id']?.toString() ?? field['id']?.toString() ?? '';
+      }
+      return field?.toString() ?? '';
+    }
+
     return Job(
-      id: json['_id'] ?? json['id'],
-      consumerId: json['consumerId'],
-      providerId: json['providerId'],
-      serviceCategory: json['serviceCategory'],
-      description: json['description'],
-      location: json['location'],
-      preferredDate: DateTime.parse(json['preferredDate']),
-      status: json['status'],
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      
+      // Safely extract just the string ID for these fields
+      consumerId: getObjectId(json['consumerId']),
+      providerId: json['providerId'] != null ? getObjectId(json['providerId']) : null,
+      
+      // Standard string fields with safe fallbacks in case of nulls
+      serviceCategory: json['serviceCategory'] ?? 'Unknown',
+      description: json['description'] ?? '',
+      location: json['location'] ?? '',
+      
+      // Safely parse dates
+      preferredDate: json['preferredDate'] != null 
+          ? DateTime.parse(json['preferredDate']) 
+          : DateTime.now(),
+          
+      status: json['status'] ?? 'pending',
       contactDetails: json['contactDetails'],
-      paymentMethod: json['paymentMethod'],
-      paymentStatus: json['paymentStatus'],
+      paymentMethod: json['paymentMethod'] ?? 'cod',
+      paymentStatus: json['paymentStatus'] ?? 'pending',
       price: (json['price'] ?? 0).toDouble(),
-      createdAt: DateTime.parse(json['createdAt']),
-      consumer: json['consumer'] != null ? User.fromJson(json['consumer']) : null,
-      provider: json['provider'] != null ? User.fromJson(json['provider']) : null,
+      
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
+          
+      // Populate the nested User objects if the backend sent them
+      consumer: json['consumerId'] is Map<String, dynamic> 
+          ? User.fromJson(json['consumerId']) 
+          : null,
+      provider: json['providerId'] is Map<String, dynamic> 
+          ? User.fromJson(json['providerId']) 
+          : null,
     );
   }
-
+  
   Map<String, dynamic> toJson() {
     return {
       'id': id,

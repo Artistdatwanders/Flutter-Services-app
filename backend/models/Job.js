@@ -32,6 +32,10 @@ const jobSchema = new mongoose.Schema({
     enum: ['pending', 'accepted', 'declined', 'completed'],
     default: 'pending',
   },
+  rejectedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   contactDetails: {
     name: String,
     phone: String,

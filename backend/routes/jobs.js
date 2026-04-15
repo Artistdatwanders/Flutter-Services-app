@@ -54,15 +54,27 @@ router.get('/', auth, async (req, res) => {
 
 // Get job leads for providers
 router.get('/leads', auth, async (req, res) => {
+
+  // console.log(`---> Request received at: /jobs/leads | UserID: ${req.user?.id} | Role: ${req.user?.role}`);
+
   try {
     if (req.user.role !== 'provider') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const jobs = await Job.find({ status: 'pending' }).populate('consumerId', 'name location');
+    const allPending = await Job.find({ status: 'pending' });
+    console.log("Total Pending Jobs in DB:", allPending.length);
+
+    const jobs = await Job.find({ 
+      status: 'pending',
+      rejectedBy: { $nin: req.user.id }
+    }).populate('consumerId', 'name location phone role');
+
+    console.log("Jobs sending to frontend:", jobs.length);
+
     res.json(jobs);
   } catch (err) {
-    console.error(err.message);
+    console.error("Backend Error in /leads:", err.message);
     res.status(500).send('Server error');
   }
 });
@@ -114,7 +126,10 @@ router.put('/:id/decline', auth, async (req, res) => {
       return res.status(400).json({ message: 'Job already processed' });
     }
 
-    job.status = 'declined';
+    // Add provider to rejectedBy array
+    if (!job.rejectedBy.includes(req.user.id)) {
+      job.rejectedBy.push(req.user.id);
+    }
     await job.save();
 
     res.json(job);
@@ -127,16 +142,16 @@ router.put('/:id/decline', auth, async (req, res) => {
 // Complete job
 router.put('/:id/complete', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'consumer') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
     const job = await Job.findById(req.params.id);
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
 
-    if (job.consumerId.toString() !== req.user.id) {
+    // Allow consumer or the assigned provider to complete the job
+    if (req.user.role === 'consumer' && job.consumerId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    if (req.user.role === 'provider' && job.providerId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -144,9 +159,13 @@ router.put('/:id/complete', auth, async (req, res) => {
     job.paymentStatus = 'completed';
     await job.save();
 
-    // Notify provider
+    // Notify the other party
     const io = req.app.get('io');
-    io.to(job.providerId.toString()).emit('jobCompleted', job);
+    if (req.user.role === 'provider') {
+      io.to(job.consumerId.toString()).emit('jobCompleted', job);
+    } else {
+      io.to(job.providerId.toString()).emit('jobCompleted', job);
+    }
 
     res.json(job);
   } catch (err) {

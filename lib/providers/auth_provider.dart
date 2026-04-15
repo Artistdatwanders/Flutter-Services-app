@@ -36,7 +36,8 @@ class AuthProvider with ChangeNotifier {
       );
 
       _token = response['token'];
-      _user = User.fromJson(response['user']);
+      // Load full profile data since auth response only has partial user info
+      await loadProfile();
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -61,7 +62,8 @@ class AuthProvider with ChangeNotifier {
       );
 
       _token = response['token'];
-      _user = User.fromJson(response['user']);
+      // Load full profile data since auth response only has partial user info
+      await loadProfile();
     } catch (e) {
       _isLoading = false;
       notifyListeners();

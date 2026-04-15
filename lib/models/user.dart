@@ -21,12 +21,19 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'] ?? json['id'],
-      name: json['name'],
-      phone: json['phone'],
-      email: json['email'],
-      role: json['role'],
-      location: json['location'],
+      // 1. Safe ID mapping
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      
+      // 2. Add '??' fallbacks to EVERY non-nullable string
+      name: json['name'] ?? 'Unknown User',
+      phone: json['phone'] ?? 'No Phone',
+      role: json['role'] ?? 'consumer', // This was likely the one crashing!
+      location: json['location'] ?? 'No Location',
+      
+      // 3. Email is already nullable (String?), so this is fine
+      email: json['email'], 
+      
+      // 4. Numbers and Booleans need safe defaults too
       rating: (json['rating'] ?? 0).toDouble(),
       isOnline: json['isOnline'] ?? false,
     );

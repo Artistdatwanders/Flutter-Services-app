@@ -38,14 +38,25 @@ app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/services', require('./routes/services'));
 
 // Socket.io for real-time
+const connectedUsers = new Map(); // socket.id -> userId
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join', (userId) => {
+  socket.on('join', async (userId) => {
     socket.join(userId);
+    connectedUsers.set(socket.id, userId);
+    await User.findByIdAndUpdate(userId, { isOnline: true });
+    console.log(`User ${userId} is now online`);
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
+    const userId = connectedUsers.get(socket.id);
+    if (userId) {
+      await User.findByIdAndUpdate(userId, { isOnline: false });
+      connectedUsers.delete(socket.id);
+      console.log(`User ${userId} is now offline`);
+    }
     console.log('User disconnected:', socket.id);
   });
 });
