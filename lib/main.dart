@@ -94,14 +94,32 @@ class _MainNavigationState extends State<MainNavigation> {
             unselectedItemColor: Colors.grey,
             items: isProvider
                 ? const [
-                    BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Stats'),
-                    BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Leads'),
-                    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.dashboard),
+                      label: 'Stats',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.work),
+                      label: 'Leads',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person),
+                      label: 'Account',
+                    ),
                   ]
                 : const [
-                    BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explore'),
-                    BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
-                    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.search),
+                      label: 'Explore',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.calendar_today),
+                      label: 'Bookings',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person),
+                      label: 'Profile',
+                    ),
                   ],
           ),
         );
@@ -161,7 +179,10 @@ class _HomePageState extends State<HomePage> {
                   decoration: InputDecoration(
                     hintText: "Search for AC Repair, Cleaning...",
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                     filled: true,
                     fillColor: Colors.grey.shade100,
                   ),
@@ -171,7 +192,10 @@ class _HomePageState extends State<HomePage> {
               // Categories Grid
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text("All Services", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(
+                  "All Services",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
               if (jobProvider.services.isEmpty)
                 const Padding(
@@ -183,6 +207,7 @@ class _HomePageState extends State<HomePage> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 4,
+                  childAspectRatio: 0.8,
                   padding: const EdgeInsets.all(16),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
@@ -198,14 +223,26 @@ class _HomePageState extends State<HomePage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF1A56DB), Color(0xFF1E40AF)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1A56DB), Color(0xFF1E40AF)],
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Summer AC Special", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text("Get 20% off on complete AC servicing", style: TextStyle(color: Colors.white70)),
+                      Text(
+                        "Summer AC Special",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "Get 20% off on complete AC servicing",
+                        style: TextStyle(color: Colors.white70),
+                      ),
                     ],
                   ),
                 ),
@@ -217,62 +254,54 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCategoryItem(BuildContext context, Service service) {
-    IconData icon;
-    switch (service.icon) {
-      case 'ac_repair':
-        icon = Icons.ac_unit;
-        break;
-      case 'cleaning':
-        icon = Icons.cleaning_services;
-        break;
-      case 'plumbing':
-        icon = Icons.plumbing;
-        break;
-      case 'electric':
-        icon = Icons.electric_bolt;
-        break;
-      case 'fumigation':
-        icon = Icons.pest_control;
-        break;
-      case 'carpentry':
-        icon = Icons.carpenter;
-        break;
-      case 'painting':
-        icon = Icons.format_paint;
-        break;
-      default:
-        icon = Icons.more_horiz;
-    }
-
-    return ElevatedButton(
-      onPressed: () {
-        // Navigate to job creation with selected service
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => JobCreationScreen(selectedService: service.name),
-          ),
-        );
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.grey.shade100,
-        foregroundColor: Colors.blue.shade800,
-        elevation: 0,
-        padding: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon),
-          const SizedBox(height: 4),
-          Text(service.name, style: const TextStyle(fontSize: 10), textAlign: TextAlign.center),
-        ],
-      ),
-    );
+ Widget _buildCategoryItem(BuildContext context, Service service) {
+  IconData icon;
+  switch (service.icon) {
+    case 'ac_repair': icon = Icons.ac_unit; break;
+    case 'cleaning': icon = Icons.cleaning_services; break;
+    case 'plumbing': icon = Icons.plumbing; break;
+    case 'electric': icon = Icons.electric_bolt; break;
+    case 'fumigation': icon = Icons.pest_control; break;
+    case 'carpentry': icon = Icons.carpenter; break;
+    case 'painting': icon = Icons.format_paint; break;
+    default: icon = Icons.more_horiz;
   }
+
+  return ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => JobCreationScreen(selectedService: service.name),
+        ),
+      );
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.grey.shade100,
+      foregroundColor: Colors.blue.shade800,
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min, // Added: Keeps the column compact
+      children: [
+        Icon(icon, size: 24),
+        const SizedBox(height: 4),
+        Flexible( // Changed from Expanded to Flexible
+          child: Text(
+            service.name,
+            style: const TextStyle(fontSize: 10, height: 1.1), // height 1.1 tightens line spacing
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }
 
 // --- PROVIDER: DASHBOARD ---
@@ -290,7 +319,10 @@ class ProviderDashboard extends StatelessWidget {
           Card(
             elevation: 0,
             color: Colors.grey.shade50,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
             child: ListTile(
               leading: const Icon(Icons.circle, color: Colors.green),
               title: const Text("Status: Online"),
@@ -299,8 +331,11 @@ class ProviderDashboard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
-          const Text("Earnings Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
+          const Text(
+            "Earnings Summary",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -309,9 +344,12 @@ class ProviderDashboard extends StatelessWidget {
               _buildStatCard("This Week", "PKR 28,200", Colors.green),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          const Text("Recent Performance", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            "Recent Performance",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const ListTile(
             leading: Icon(Icons.star, color: Colors.amber),
             title: Text("4.9 Rating"),
@@ -339,9 +377,15 @@ class ProviderDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
+            Text(
+              title,
+              style: TextStyle(color: color, fontWeight: FontWeight.w500),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
@@ -361,13 +405,13 @@ class _ProviderLeadsState extends State<ProviderLeads> {
   @override
   void initState() {
     super.initState();
-    Future.microtask((){
+    Future.microtask(() {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final jobProvider = Provider.of<JobProvider>(context, listen: false);
-    if (authProvider.token != null && authProvider.user != null) {
-      jobProvider.loadLeads(authProvider.token!, authProvider.user!.id);
-      jobProvider.loadJobs(authProvider.token!);
-    }
+      final jobProvider = Provider.of<JobProvider>(context, listen: false);
+      if (authProvider.token != null && authProvider.user != null) {
+        jobProvider.loadLeads(authProvider.token!, authProvider.user!.id);
+        jobProvider.loadJobs(authProvider.token!);
+      }
     });
   }
 
@@ -380,8 +424,12 @@ class _ProviderLeadsState extends State<ProviderLeads> {
         }
 
         final availableLeads = jobProvider.leads;
-        final myActiveJobs = jobProvider.jobs.where((job) => job.status == 'accepted').toList();
-        final myPastJobs = jobProvider.jobs.where((job) => job.status == 'completed').toList();
+        final myActiveJobs = jobProvider.jobs
+            .where((job) => job.status == 'accepted')
+            .toList();
+        final myPastJobs = jobProvider.jobs
+            .where((job) => job.status == 'completed')
+            .toList();
 
         return DefaultTabController(
           length: 3,
@@ -435,7 +483,10 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.shade100,
                         borderRadius: BorderRadius.circular(8),
@@ -459,7 +510,10 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                 const SizedBox(height: 12),
                 Text(
                   job.serviceCategory,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   "Location: ${job.location}",
@@ -496,10 +550,19 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () async {
-                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                          final jobProvider = Provider.of<JobProvider>(context, listen: false);
+                          final authProvider = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final jobProvider = Provider.of<JobProvider>(
+                            context,
+                            listen: false,
+                          );
                           try {
-                            await jobProvider.declineJob(authProvider.token!, job.id);
+                            await jobProvider.declineJob(
+                              authProvider.token!,
+                              job.id,
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Job declined')),
                             );
@@ -521,10 +584,19 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                           elevation: 0,
                         ),
                         onPressed: () async {
-                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                          final jobProvider = Provider.of<JobProvider>(context, listen: false);
+                          final authProvider = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final jobProvider = Provider.of<JobProvider>(
+                            context,
+                            listen: false,
+                          );
                           try {
-                            await jobProvider.acceptJob(authProvider.token!, job.id);
+                            await jobProvider.acceptJob(
+                              authProvider.token!,
+                              job.id,
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Job accepted!')),
                             );
@@ -573,11 +645,16 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _getStatusColor(job.status).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: _getStatusColor(job.status).withOpacity(0.3)),
+                        border: Border.all(
+                          color: _getStatusColor(job.status).withOpacity(0.3),
+                        ),
                       ),
                       child: Text(
                         job.status.toUpperCase(),
@@ -597,7 +674,10 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                 const SizedBox(height: 12),
                 Text(
                   job.serviceCategory,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   "Location: ${job.location}",
@@ -632,7 +712,9 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                       // But according to backend, only consumers can complete jobs
                       // So maybe show contact info or status
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Contact client to complete the job')),
+                        const SnackBar(
+                          content: Text('Contact client to complete the job'),
+                        ),
                       );
                     },
                     child: const Text('Contact Client'),
@@ -689,8 +771,14 @@ class _BookingsPageState extends State<BookingsPage> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final activeJobs = jobProvider.jobs.where((job) => job.status == 'pending' || job.status == 'accepted').toList();
-        final pastJobs = jobProvider.jobs.where((job) => job.status == 'completed' || job.status == 'declined').toList();
+        final activeJobs = jobProvider.jobs
+            .where((job) => job.status == 'pending' || job.status == 'accepted')
+            .toList();
+        final pastJobs = jobProvider.jobs
+            .where(
+              (job) => job.status == 'completed' || job.status == 'declined',
+            )
+            .toList();
 
         return DefaultTabController(
           length: 2,
@@ -742,11 +830,16 @@ class _BookingsPageState extends State<BookingsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _getStatusColor(job.status).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: _getStatusColor(job.status).withOpacity(0.3)),
+                        border: Border.all(
+                          color: _getStatusColor(job.status).withOpacity(0.3),
+                        ),
                       ),
                       child: Text(
                         job.status.toUpperCase(),
@@ -766,7 +859,10 @@ class _BookingsPageState extends State<BookingsPage> {
                 const SizedBox(height: 12),
                 Text(
                   job.serviceCategory,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   "Location: ${job.location}",
@@ -798,7 +894,9 @@ class _BookingsPageState extends State<BookingsPage> {
                       children: [
                         const Icon(Icons.star, size: 16, color: Colors.amber),
                         const SizedBox(width: 4),
-                        Text('${job.provider!.rating!.toStringAsFixed(1)} rating'),
+                        Text(
+                          '${job.provider!.rating!.toStringAsFixed(1)} rating',
+                        ),
                       ],
                     ),
                   ],
@@ -807,18 +905,29 @@ class _BookingsPageState extends State<BookingsPage> {
                   const Divider(height: 24),
                   ElevatedButton(
                     onPressed: () async {
-                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                      final jobProvider = Provider.of<JobProvider>(context, listen: false);
+                      final authProvider = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final jobProvider = Provider.of<JobProvider>(
+                        context,
+                        listen: false,
+                      );
                       if (authProvider.token != null) {
                         try {
-                          await jobProvider.completeJob(authProvider.token!, job.id);
+                          await jobProvider.completeJob(
+                            authProvider.token!,
+                            job.id,
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Job marked as completed')),
+                            const SnackBar(
+                              content: Text('Job marked as completed'),
+                            ),
                           );
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
                         }
                       }
                     },
@@ -851,6 +960,91 @@ class _BookingsPageState extends State<BookingsPage> {
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
+
+  void _showDescription(
+    BuildContext context,
+    String title,
+    String description,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(description),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSafetySheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Safety Toolkit",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+
+              // 1. Emergency Call
+              ListTile(
+                leading: const Icon(Icons.emergency, color: Colors.red),
+                title: const Text(
+                  "Call Emergency Services",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text("Dial 911 immediately"),
+                onTap: () {
+                  // You would use the 'url_launcher' package here to dial
+                },
+              ),
+
+              // 2. Share Location
+              ListTile(
+                leading: const Icon(Icons.share_location, color: Colors.blue),
+                title: const Text("Share Live Location"),
+                subtitle: const Text(
+                  "Send your current trip/job location to contacts",
+                ),
+                onTap: () {
+                  /* Logic for sharing location */
+                },
+              ),
+
+              // 3. Trusted Contacts
+              ListTile(
+                leading: const Icon(Icons.people_outline, color: Colors.green),
+                title: const Text("Notify Trusted Contacts"),
+                subtitle: const Text("Alert your pre-saved emergency contacts"),
+                onTap: () {
+                  /* Logic to send SMS/Push to contacts */
+                },
+              ),
+
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -874,7 +1068,9 @@ class ProfilePage extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.badge),
               title: const Text("Role"),
-              trailing: Text(user.role == 'provider' ? 'Service Provider' : 'Customer'),
+              trailing: Text(
+                user.role == 'provider' ? 'Service Provider' : 'Customer',
+              ),
             ),
             if (user.email != null)
               ListTile(
@@ -894,7 +1090,10 @@ class ProfilePage extends StatelessWidget {
             ),
             if (user.role == 'provider')
               ListTile(
-                leading: Icon(user.isOnline ? Icons.circle : Icons.circle_outlined, color: user.isOnline ? Colors.green : Colors.grey),
+                leading: Icon(
+                  user.isOnline ? Icons.circle : Icons.circle_outlined,
+                  color: user.isOnline ? Colors.green : Colors.grey,
+                ),
                 title: const Text("Online Status"),
                 trailing: Text(user.isOnline ? 'Online' : 'Offline'),
               ),
@@ -902,20 +1101,38 @@ class ProfilePage extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.verified_user),
               title: const Text("Verification Status"),
-              trailing: const Text("Verified", style: TextStyle(color: Colors.green)),
+              trailing: const Text(
+                "Verified",
+                style: TextStyle(color: Colors.green),
+              ),
+              onTap: () => _showDescription(
+                context,
+                "Verification Status",
+                "Your account has been verified by our team. This ensures trust within our community.",
+              ),
             ),
-            const ListTile(
-              leading: Icon(Icons.payment),
-              title: Text("Payment Methods"),
+            // const ListTile(
+            //   leading: Icon(Icons.payment),
+            //   title: Text("Payment Methods"),
+            // ),
+            ListTile(
+              leading: const Icon(
+                Icons.security,
+                color: Colors.redAccent,
+              ), // Red accent for safety
+              title: const Text("Safety Settings (SOS)"),
+              onTap: () => _showSafetySheet(context),
             ),
-            const ListTile(
-              leading: Icon(Icons.security),
-              title: Text("Safety Settings (SOS)"),
+            ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text("Support & Dispute Resolution"),
+              onTap: () => _showDescription(
+                context,
+                "Support",
+                "Need help? You can reach our 24/7 support team via the email servicehelp@example.com. or Whatsapp 0123456789",
+              ),
             ),
-            const ListTile(
-              leading: Icon(Icons.help_outline),
-              title: Text("Support & Dispute Resolution"),
-            ),
+
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text("Logout"),
