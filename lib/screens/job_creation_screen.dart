@@ -16,14 +16,33 @@ class _JobCreationScreenState extends State<JobCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
+  final _priceController = TextEditingController();
   DateTime _preferredDate = DateTime.now().add(const Duration(days: 1));
   String _paymentMethod = 'cod';
   bool _isLoading = false;
+
+  static const Map<String, double> serviceRates = {
+    'AC Repair': 2500.0,
+    'Cleaning': 1800.0,
+    'Plumbing': 2200.0,
+    'Electric': 2000.0,
+    'Fumigation': 3000.0,
+    'Carpentry': 2800.0,
+    'Painting': 2600.0,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _priceController.text =
+        serviceRates[widget.selectedService]?.toStringAsFixed(0) ?? '';
+  }
 
   @override
   void dispose() {
     _descriptionController.dispose();
     _locationController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -65,6 +84,7 @@ class _JobCreationScreenState extends State<JobCreationScreen> {
         'location': _locationController.text,
         'preferredDate': _preferredDate.toIso8601String(),
         'paymentMethod': _paymentMethod,
+        'price': double.parse(_priceController.text),
         'contactDetails': {
           'name': authProvider.user?.name ?? '',
           'phone': authProvider.user?.phone ?? '',
@@ -125,6 +145,27 @@ class _JobCreationScreenState extends State<JobCreationScreen> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a location';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _priceController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Price',
+                  hintText: 'Enter estimated price',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a price';
+                  }
+                  final parsed = double.tryParse(value);
+                  if (parsed == null || parsed <= 0) {
+                    return 'Enter a valid price';
                   }
                   return null;
                 },

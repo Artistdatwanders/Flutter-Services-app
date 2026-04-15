@@ -85,6 +85,23 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateOnlineStatus(bool isOnline) async {
+    if (_token == null) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _user = await _apiService.updateProfile(_token!, {'isOnline': isOnline});
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void logout() {
     _user = null;
     _token = null;

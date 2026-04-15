@@ -8,7 +8,7 @@ const router = express.Router();
 // Create job
 router.post('/', auth, async (req, res) => {
   try {
-    const { serviceCategory, description, location, preferredDate, paymentMethod, contactDetails } = req.body;
+    const { serviceCategory, description, location, preferredDate, paymentMethod, contactDetails, price } = req.body;
 
     const job = new Job({
       consumerId: req.user.id,
@@ -18,6 +18,7 @@ router.post('/', auth, async (req, res) => {
       preferredDate,
       paymentMethod,
       contactDetails,
+      price,
     });
 
     await job.save();

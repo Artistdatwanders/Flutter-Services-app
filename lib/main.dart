@@ -310,58 +310,116 @@ class ProviderDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Availability Toggle
-          Card(
-            elevation: 0,
-            color: Colors.grey.shade50,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.shade200),
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.circle, color: Colors.green),
-              title: const Text("Status: Online"),
-              subtitle: const Text("Receiving jobs in Clifton & DHA"),
-              trailing: Switch(value: true, onChanged: (v) {}),
-            ),
-          ),
-          const SizedBox(height: 20),
+    return Consumer2<AuthProvider, JobProvider>(
+      builder: (context, authProvider, jobProvider, child) {
+        final user = authProvider.user;
 
-          const Text(
-            "Earnings Summary",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Row(
+        if (user == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!jobProvider.isLoading && jobProvider.jobs.isEmpty && authProvider.token != null) {
+          Future.microtask(() => jobProvider.loadJobs(authProvider.token!));
+        }
+
+        final completedJobs = jobProvider.jobs
+            .where((job) => job.status == 'completed')
+            .toList();
+
+        final today = DateTime.now();
+        final todayCompletedJobs = completedJobs.where((job) {
+          final createdDate = job.createdAt;
+          return createdDate.year == today.year &&
+              createdDate.month == today.month &&
+              createdDate.day == today.day;
+        }).toList();
+
+        final weekCompletedJobs = completedJobs.where((job) {
+          final createdDate = job.createdAt;
+          return today.difference(createdDate).inDays <= 7;
+        }).toList();
+
+        final todayEarnings = todayCompletedJobs.fold<double>(0.0, (sum, job) => sum + job.price);
+        final weekEarnings = weekCompletedJobs.fold<double>(0.0, (sum, job) => sum + job.price);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatCard("Today", "PKR 4,500", Colors.blue),
-              const SizedBox(width: 12),
-              _buildStatCard("This Week", "PKR 28,200", Colors.green),
+              // Availability Toggle
+              Card(
+                elevation: 0,
+                color: Colors.grey.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    user.isOnline ? Icons.circle : Icons.circle_outlined,
+                    color: user.isOnline ? Colors.green : Colors.grey,
+                  ),
+                  title: Text("Status: ${user.isOnline ? 'Online' : 'Offline'}"),
+                  subtitle: Text("Receiving jobs in ${user.location}"),
+                  trailing: Switch(
+                    value: user.isOnline,
+                    onChanged: (v) async {
+                      if (authProvider.token != null) {
+                        try {
+                          await authProvider.updateOnlineStatus(v);
+                        } catch (_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Unable to update online status')),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
+                "Earnings Summary",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _buildStatCard(
+                    "Today",
+                    "PKR ${todayEarnings.toStringAsFixed(0)}",
+                    Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  _buildStatCard(
+                    "This Week",
+                    "PKR ${weekEarnings.toStringAsFixed(0)}",
+                    Colors.green,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+              const Text(
+                "Recent Performance",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              ListTile(
+                leading: const Icon(Icons.star, color: Colors.amber),
+                title: Text("${user.rating.toStringAsFixed(1)} Rating"),
+                subtitle: Text("Based on ${completedJobs.length} completed jobs"),
+              ),
+              const ListTile(
+                leading: Icon(Icons.timer, color: Colors.blue),
+                title: Text("98% On-Time"),
+                subtitle: Text("Excellent punctuality record"),
+              ),
             ],
           ),
-
-          const SizedBox(height: 24),
-          const Text(
-            "Recent Performance",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const ListTile(
-            leading: Icon(Icons.star, color: Colors.amber),
-            title: Text("4.9 Rating"),
-            subtitle: Text("Based on 124 completed jobs"),
-          ),
-          const ListTile(
-            leading: Icon(Icons.timer, color: Colors.blue),
-            title: Text("98% On-Time"),
-            subtitle: Text("Excellent punctuality record"),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -502,7 +560,7 @@ class _ProviderLeadsState extends State<ProviderLeads> {
                       ),
                     ),
                     Text(
-                      "Est: PKR 1,500 - 2,500",
+                      "Est: PKR ${job.price.toStringAsFixed(0)}",
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
