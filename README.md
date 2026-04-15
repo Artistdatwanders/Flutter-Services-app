@@ -1,9 +1,6 @@
-<<<<<<< HEAD
+## Service APP ##
 
-todo
-create a login/signup page that then leads to main page, and according to which user it is i.e consumer or provider show that page
-link it with already established backend users.js
-=======
-# Services help app
+An app that allows users to signup and post jobs/services they require to get done i.e plumbing, electrical work etc.
+Separate users can sign up to perform those jobs
 
->>>>>>> 02c79f18f8da476ce5598e9e523874a1d441bad6
+made using Flutter and NodeJs
