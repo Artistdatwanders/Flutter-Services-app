@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/job_provider.dart';
+import 'screens/auth_screen.dart';
 import 'screens/job_creation_screen.dart';
 import 'models/service.dart';
+import 'models/job.dart';
 
 void main() {
   runApp(const HandymanApp());
@@ -31,7 +33,13 @@ class HandymanApp extends StatelessWidget {
           ),
           fontFamily: 'Inter',
         ),
-        home: const MainNavigation(),
+        home: Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            return authProvider.isAuthenticated
+                ? const MainNavigation()
+                : const AuthScreen();
+          },
+        ),
       ),
     );
   }
@@ -46,7 +54,6 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
-  bool _isProviderMode = false;
 
   // View Switching Logic
   final List<Widget> _consumerPages = [
@@ -63,50 +70,42 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isProviderMode ? 'Provider Panel' : 'HandyHelp'),
-        actions: [
-          // Role Toggle for Demo Purposes
-          Row(
-            children: [
-              Text(_isProviderMode ? 'Pro' : 'User', style: const TextStyle(fontSize: 12)),
-              Switch(
-                value: _isProviderMode,
-                onChanged: (val) => setState(() {
-                  _isProviderMode = val;
-                  _selectedIndex = 0; // Reset index when switching roles
-                }),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final isProvider = authProvider.user?.role == 'provider';
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(isProvider ? 'Provider Panel' : 'HandyHelp'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none),
+                onPressed: () {},
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: isProvider ? _providerPages : _consumerPages,
           ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _isProviderMode ? _providerPages : _consumerPages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: const Color(0xFF1A56DB),
-        unselectedItemColor: Colors.grey,
-        items: _isProviderMode
-            ? const [
-                BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Stats'),
-                BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Leads'),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
-              ]
-            : const [
-                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explore'),
-                BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-              ],
-      ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) => setState(() => _selectedIndex = index),
+            selectedItemColor: const Color(0xFF1A56DB),
+            unselectedItemColor: Colors.grey,
+            items: isProvider
+                ? const [
+                    BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Stats'),
+                    BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Leads'),
+                    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+                  ]
+                : const [
+                    BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explore'),
+                    BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
+                    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+                  ],
+          ),
+        );
+      },
     );
   }
 }
@@ -362,10 +361,323 @@ class _ProviderLeadsState extends State<ProviderLeads> {
   @override
   void initState() {
     super.initState();
+    Future.microtask((){
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final jobProvider = Provider.of<JobProvider>(context, listen: false);
+    if (authProvider.token != null && authProvider.user != null) {
+      jobProvider.loadLeads(authProvider.token!, authProvider.user!.id);
+      jobProvider.loadJobs(authProvider.token!);
+    }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<JobProvider>(
+      builder: (context, jobProvider, child) {
+        if (jobProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final availableLeads = jobProvider.leads;
+        final myActiveJobs = jobProvider.jobs.where((job) => job.status == 'accepted').toList();
+        final myPastJobs = jobProvider.jobs.where((job) => job.status == 'completed').toList();
+
+        return DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Job Management'),
+              bottom: const TabBar(
+                tabs: [
+                  Tab(text: 'Available Leads'),
+                  Tab(text: 'Active Jobs'),
+                  Tab(text: 'Past Jobs'),
+                ],
+              ),
+            ),
+            body: TabBarView(
+              children: [
+                _buildLeadsList(availableLeads, 'No job leads available'),
+                _buildJobsList(myActiveJobs, 'No active jobs'),
+                _buildJobsList(myPastJobs, 'No completed jobs'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLeadsList(List<Job> leads, String emptyMessage) {
+    if (leads.isEmpty) {
+      return Center(child: Text(emptyMessage));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: leads.length,
+      itemBuilder: (context, index) {
+        final job = leads[index];
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.shade300),
+                      ),
+                      child: const Text(
+                        "NEW LEAD",
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      "Est: PKR 1,500 - 2,500",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  job.serviceCategory,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Location: ${job.location}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                Text(
+                  "Description: ${job.description}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                Text(
+                  "Preferred Date: ${job.preferredDate.day}/${job.preferredDate.month}/${job.preferredDate.year}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                if (job.consumer != null) ...[
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Client: ${job.consumer!.name}",
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.phone, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(job.consumer!.phone ?? 'N/A'),
+                    ],
+                  ),
+                ],
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          final jobProvider = Provider.of<JobProvider>(context, listen: false);
+                          try {
+                            await jobProvider.declineJob(authProvider.token!, job.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Job declined')),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        },
+                        child: const Text("Decline"),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A56DB),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          final jobProvider = Provider.of<JobProvider>(context, listen: false);
+                          try {
+                            await jobProvider.acceptJob(authProvider.token!, job.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Job accepted!')),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        },
+                        child: const Text("Accept Job"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildJobsList(List<Job> jobs, String emptyMessage) {
+    if (jobs.isEmpty) {
+      return Center(child: Text(emptyMessage));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: jobs.length,
+      itemBuilder: (context, index) {
+        final job = jobs[index];
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(job.status).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _getStatusColor(job.status).withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        job.status.toUpperCase(),
+                        style: TextStyle(
+                          color: _getStatusColor(job.status),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${job.preferredDate.day}/${job.preferredDate.month}/${job.preferredDate.year}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  job.serviceCategory,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Location: ${job.location}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                Text(
+                  "Description: ${job.description}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                if (job.consumer != null) ...[
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Client: ${job.consumer!.name}",
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.phone, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(job.consumer!.phone ?? 'N/A'),
+                    ],
+                  ),
+                ],
+                if (job.status == 'accepted') ...[
+                  const Divider(height: 24),
+                  ElevatedButton(
+                    onPressed: () async {
+                      // For providers, they might need to mark job as completed
+                      // But according to backend, only consumers can complete jobs
+                      // So maybe show contact info or status
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Contact client to complete the job')),
+                      );
+                    },
+                    child: const Text('Contact Client'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return Colors.orange;
+      case 'accepted':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'declined':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+// --- CONSUMER: BOOKINGS PAGE ---
+class BookingsPage extends StatefulWidget {
+  const BookingsPage({super.key});
+
+  @override
+  State<BookingsPage> createState() => _BookingsPageState();
+}
+
+class _BookingsPageState extends State<BookingsPage> {
+  @override
+  void initState() {
+    super.initState();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final jobProvider = Provider.of<JobProvider>(context, listen: false);
     if (authProvider.token != null) {
-      jobProvider.loadLeads(authProvider.token!);
+      jobProvider.loadJobs(authProvider.token!);
     }
   }
 
@@ -377,147 +689,243 @@ class _ProviderLeadsState extends State<ProviderLeads> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (jobProvider.leads.isEmpty) {
-          return const Center(child: Text('No job leads available'));
-        }
+        final activeJobs = jobProvider.jobs.where((job) => job.status == 'pending' || job.status == 'accepted').toList();
+        final pastJobs = jobProvider.jobs.where((job) => job.status == 'completed' || job.status == 'declined').toList();
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: jobProvider.leads.length,
-          itemBuilder: (context, index) {
-            final job = jobProvider.leads[index];
-            return Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.shade200),
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('My Bookings'),
+              bottom: const TabBar(
+                tabs: [
+                  Tab(text: 'Active'),
+                  Tab(text: 'Past'),
+                ],
               ),
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            "NEW",
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          "Est: PKR 1,500 - 2,500",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      job.serviceCategory,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "Location: ${job.location}",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    Text(
-                      "Description: ${job.description}",
-                      style: TextStyle(color: Colors.grey.shade700),
-                    ),
-                    const Divider(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () async {
-                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                              try {
-                                await jobProvider.declineJob(authProvider.token!, job.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Job declined')),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e')),
-                                );
-                              }
-                            },
-                            child: const Text("Decline"),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1A56DB),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                            ),
-                            onPressed: () async {
-                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                              try {
-                                await jobProvider.acceptJob(authProvider.token!, job.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Job accepted!')),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e')),
-                                );
-                              }
-                            },
-                            child: const Text("Accept Job"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+            ),
+            body: TabBarView(
+              children: [
+                _buildJobsList(activeJobs, 'No active bookings'),
+                _buildJobsList(pastJobs, 'No past bookings'),
+              ],
+            ),
+          ),
         );
       },
     );
   }
-}
 
-// --- PLACEHOLDER PAGES ---
-class BookingsPage extends StatelessWidget {
-  const BookingsPage({super.key});
-  @override
-  Widget build(BuildContext context) => const Center(child: Text("Active and Past Bookings"));
+  Widget _buildJobsList(List<Job> jobs, String emptyMessage) {
+    if (jobs.isEmpty) {
+      return Center(child: Text(emptyMessage));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: jobs.length,
+      itemBuilder: (context, index) {
+        final job = jobs[index];
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(job.status).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _getStatusColor(job.status).withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        job.status.toUpperCase(),
+                        style: TextStyle(
+                          color: _getStatusColor(job.status),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${job.preferredDate.day}/${job.preferredDate.month}/${job.preferredDate.year}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  job.serviceCategory,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Location: ${job.location}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                Text(
+                  "Description: ${job.description}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                if (job.provider != null) ...[
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Provider: ${job.provider!.name}",
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.phone, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(job.provider!.phone ?? 'N/A'),
+                    ],
+                  ),
+                  if (job.provider!.rating != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, size: 16, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        Text('${job.provider!.rating!.toStringAsFixed(1)} rating'),
+                      ],
+                    ),
+                  ],
+                ],
+                if (job.status == 'accepted') ...[
+                  const Divider(height: 24),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                      final jobProvider = Provider.of<JobProvider>(context, listen: false);
+                      if (authProvider.token != null) {
+                        try {
+                          await jobProvider.completeJob(authProvider.token!, job.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Job marked as completed')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Mark as Completed'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return Colors.orange;
+      case 'accepted':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'declined':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
 }
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        const UserAccountsDrawerHeader(
-          accountName: Text("Ahmed Khan"),
-          accountEmail: Text("+92 300 1234567"),
-          currentAccountPicture: CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.person, color: Color(0xFF1A56DB))),
-          decoration: BoxDecoration(color: Color(0xFF1A56DB)),
-        ),
-        ListTile(leading: const Icon(Icons.verified_user), title: const Text("Verification Status"), trailing: const Text("Verified", style: TextStyle(color: Colors.green))),
-        const ListTile(leading: const Icon(Icons.payment), title: const Text("Payment Methods")),
-        const ListTile(leading: const Icon(Icons.security), title: const Text("Safety Settings (SOS)")),
-        const ListTile(leading: const Icon(Icons.help_outline), title: const Text("Support & Dispute Resolution")),
-        const ListTile(leading: const Icon(Icons.logout), title: const Text("Logout")),
-      ],
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.user;
+        if (user == null) {
+          return const Center(child: Text('No user data'));
+        }
+
+        return ListView(
+          children: [
+            UserAccountsDrawerHeader(
+              accountName: Text(user.name),
+              accountEmail: Text(user.phone ?? 'No phone'),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: const Color(0xFF1A56DB)),
+              ),
+              decoration: const BoxDecoration(color: Color(0xFF1A56DB)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.badge),
+              title: const Text("Role"),
+              trailing: Text(user.role == 'provider' ? 'Service Provider' : 'Customer'),
+            ),
+            if (user.email != null)
+              ListTile(
+                leading: const Icon(Icons.email),
+                title: const Text("Email"),
+                trailing: Text(user.email!),
+              ),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text("Location"),
+              trailing: Text(user.location),
+            ),
+            ListTile(
+              leading: const Icon(Icons.star),
+              title: const Text("Rating"),
+              trailing: Text(user.rating.toStringAsFixed(1)),
+            ),
+            if (user.role == 'provider')
+              ListTile(
+                leading: Icon(user.isOnline ? Icons.circle : Icons.circle_outlined, color: user.isOnline ? Colors.green : Colors.grey),
+                title: const Text("Online Status"),
+                trailing: Text(user.isOnline ? 'Online' : 'Offline'),
+              ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.verified_user),
+              title: const Text("Verification Status"),
+              trailing: const Text("Verified", style: TextStyle(color: Colors.green)),
+            ),
+            const ListTile(
+              leading: Icon(Icons.payment),
+              title: Text("Payment Methods"),
+            ),
+            const ListTile(
+              leading: Icon(Icons.security),
+              title: Text("Safety Settings (SOS)"),
+            ),
+            const ListTile(
+              leading: Icon(Icons.help_outline),
+              title: Text("Support & Dispute Resolution"),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text("Logout"),
+              onTap: () {
+                authProvider.logout();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
